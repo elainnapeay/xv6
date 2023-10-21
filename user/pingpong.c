@@ -13,9 +13,9 @@ main(int argc, char **argv)
     if (pid == 0) { // Child process
         read(p[0], buf, 1); // Read from pipe
         printf("%d: received ping\n", getpid());
-        write(p[1], "1", 1); // Write to pipe
+        write(p[1], "ping", 1); // Write to pipe
     } else { // Parent process
-        write(p[1], "1", 1); // Write to pipe
+        write(p[1], "pong", 1); // Write to pipe
         wait(0); // Wait for child process to finish
         read(p[0], buf, 1); // Read from pipe
         printf("%d: received pong\n", getpid());
