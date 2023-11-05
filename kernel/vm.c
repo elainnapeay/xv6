@@ -437,3 +437,35 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+void vmprint(pagetable_t pagetable, int depth)
+{
+  // If the depth is 0, print the address of the page table.
+  if (depth == 0)
+  {
+    printf("page table %p\n", pagetable);
+  }
+  // Create an indentation string for printing.
+  char indentation[2 * depth + 1];
+  for (int i = 0; i < 2 * depth; i++)
+  {
+    indentation[i] = '.';
+  }
+  indentation[2 * depth] = '\0';
+  // Iterate over all the page table entries.
+  for (int i = 0; i < 512; i++)
+  {
+    pte_t pte = pagetable[i];
+    // If the PTE is valid, print the PTE and the physical address it points to.
+    if (pte & PTE_V)
+    {
+      uint64 child = PTE2PA(pte);
+      printf("%s%d: pte %p pa %p\n", indentation, i, pte, child);
+      // If the PTE points to a lower-level page table, recursively call vmprint with the child page table and increment the depth.
+      if ((pte & (PTE_R | PTE_W | PTE_X)) == 0)
+      {
+        vmprint((pagetable_t)child, depth + 1);
+      }
+    }
+  }
+}
