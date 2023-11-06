@@ -445,7 +445,7 @@ void vmprint(pagetable_t pagetable, int depth)
   {
     printf("page table %p\n", pagetable);
   }
-  // Create an indentation string for printing.
+  // Create identation for printing based on depth level
   char indentation[2 * depth + 1];
   for (int i = 0; i < 2 * depth; i++)
   {
