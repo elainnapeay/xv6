@@ -174,7 +174,10 @@ mkfs/mkfs: mkfs/mkfs.c $K/fs.h $K/param.h
 UPROGS=\
 	$U/_cat\
 	$U/_echo\
+	$U/_find\
 	$U/_forktest\
+	$U/_pingpong\
+	$U/_sleep\
 	$U/_grep\
 	$U/_init\
 	$U/_find\
@@ -188,9 +191,8 @@ UPROGS=\
 	$U/_usertests\
 	$U/_grind\
 	$U/_wc\
+	$U/_xargs\
 	$U/_zombie\
-
-
 
 
 ifeq ($(LAB),$(filter $(LAB), lock))
