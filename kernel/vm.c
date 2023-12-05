@@ -308,7 +308,6 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -317,19 +316,16 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
-      goto err;
+    // Mark the page as read-only and copy-on-write (COW)
+    flags &= ~PTE_W;
+    // TODO: flags |= PTE_COW;
+    flags |= PTE_RSV;
+    if(mappages(new, i, PGSIZE, pa, flags) != 0){
+      uvmunmap(new, 0, i / PGSIZE, 1);
+      return -1;
     }
   }
   return 0;
-
- err:
-  uvmunmap(new, 0, i / PGSIZE, 1);
-  return -1;
 }
 
 // mark a PTE invalid for user access.
@@ -358,6 +354,27 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
     pa0 = walkaddr(pagetable, va0);
     if(pa0 == 0)
       return -1;
+    // check if cow page
+    pte_t *pte;
+    pte = walk(pagetable, va0, 0);
+    if(pte==0)
+      return -1;
+    if((*pte & PTE_V)==0)
+      return -1;
+    if((*pte & PTE_U)==0)
+      return -1;
+    if(*pte & PTE_RSW){
+      pa0 = PTE2PA(*pte);
+      uint flags = PTE_FLAGS(*pte);
+      flags &= ~PTE_RSV;
+      flags |= PTE_W;
+      char *mem = kalloc();
+      memmove(mem, (char*)pa0, PGSIZE);
+      uvmunmap(pagetable, va0,PGSIZE, 0);
+      if(mappages(pagetable, va0, PGSIZE, (uint64)mem, flags) != 0){
+        panic("error in copyout");
+      }
+    }
     n = PGSIZE - (dstva - va0);
     if(n > len)
       n = len;

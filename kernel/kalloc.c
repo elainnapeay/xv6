@@ -16,6 +16,7 @@ extern char end[]; // first address after kernel.
 
 struct run {
   struct run *next;
+  int ref_count;
 };
 
 struct {
@@ -39,6 +40,13 @@ freerange(void *pa_start, void *pa_end)
     kfree(p);
 }
 
+void 
+kget(void *pa) {
+    struct run *r = (struct run*)pa;
+    acquire(&kmem.lock);
+    r->ref_count++;
+    release(&kmem.lock);
+}
 // Free the page of physical memory pointed at by pa,
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
@@ -51,14 +59,17 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
-
   r = (struct run*)pa;
 
   acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+  r->ref_count--;
+  if (r->ref_count == 0) {
+    // Fill with junk to catch dangling refs.
+    memset(pa, 1, PGSIZE);
+
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+  }
   release(&kmem.lock);
 }
 

@@ -350,6 +350,10 @@ typedef uint64 *pagetable_t; // 512 PTEs
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 
 #define PTE_FLAGS(pte) ((pte) & 0x3FF)
+#define PTE_RSW (1 << 9)  // Define PTE_RSW as the 10th bit (bit 9) in the page table entry
+#define PTE_COW (1 << 10) // Define PTE_COW as the 11th bit (bit 10) in the page table entry
+#define PTE_RSV (1ULL << 10)  // Define PTE_RSV as the 11th bit (bit 10) in the page table entry
+
 
 // extract the three 9-bit page table indices from a virtual address.
 #define PXMASK          0x1FF // 9 bits
