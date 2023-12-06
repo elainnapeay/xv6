@@ -75,50 +75,62 @@ finddir(char *path, char *buf, int fd, struct stat st, char *search) {
     }
 }
 
-// find function
-void 
-find(char *path, char *search) {
+void
+errorExit(char *msg, char *path)
+{
+    fprintf(2, "Find: %s\n", msg, path);
+    exit(1);
+}
+
+void
+find(char *path, char *search)
+{
     char buf[512];
-    int fd;
-    struct stat st;
+    int fd; // Fd of path passed in
+    struct stat st; // Details about path
 
-    // Open the directory
-    if ((fd = open(path, 0)) < 0) {
-        fprintf(2, "find: cannot open %s\n", path);
+    // Path must be a directory
+    if((fd = open(path, 0)) < 0){
+        errorExit("cannot open %s\n", path);
         return;
     }
 
-    // Get the file status
-    if (fstat(fd, &st) < 0) {
-        fprintf(2, "find: cannot stat %s\n", path);
-        close(fd);
-        return;
+    // Path must have stats
+    if(fstat(fd, &st) < 0){
+        errorExit("cannot stat %s\n", path);
+        //close(fd);
+        //return;
     }
 
-    // If it is a directory, call finddir
     if (st.type == T_DIR) {
         finddir(path, buf, fd, st, search);
     }
     close(fd);
 }
 
+int
+main(int argc, char *argv[])
+{
+        int i;
 
-int 
-main(int argc, char *argv[]) {
-    int i;
-
-    
-    if (argc < 2) {
-        printf("Usage: find <path> <search>\n");
-    } else if (argc == 2) {
-        // If there are 2 arguments, call the find function with current directory and search pattern
-        find(".", argv[1]);
-    } else {
-        // If there are more than 2 arguments, loop through the search patterns and call find function
-        // with the specified path and each search pattern
-        for (i = 2; i < argc; i++) {
-            find(argv[1], argv[i]);
+        if(argc < 2){
+                printf("find: requires a file name to search for\n");
+        } else if (argc == 2) { // If no starting-point specified, '.' is assumed
+                struct stat st;
+                if (stat(argv[1], &st) < 0) {
+                        errorExit("cannot stat %s\n", argv[1]);
+                        //exit(1);
+                }
+                if (st.type != T_DIR) {
+                        errorExit("%s is not a directory\n", argv[1]);
+                        //fprintf(2, "find: %s is not a directory\n", argv[1]);
+                        //exit(1);
+                }
+                find(".", argv[1]);
+        } else {
+                for (i = 2; i < argc; i++) {
+                        find(argv[1], argv[i]);
+                }
         }
-    }
-    exit(0);
+        exit(0);
 }
