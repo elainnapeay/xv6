@@ -416,6 +416,29 @@ bmap(struct inode *ip, uint bn)
     brelse(bp);
     return addr;
   }
+  //Modify bmap() so that it implements a doubly-indirect block, in addition to direct blocks and a singly-indirect block. You'll have to have only 11 direct blocks, rather than 12, to make room for your new doubly-indirect block; you're not allowed to change the size of an on-disk inode. The first 11 elements of ip->addrs[] should be direct blocks; the 12th should be a singly-indirect block (just like the current one); the 13th should be your new doubly-indirect block. 
+  bn-=NINDIRECT;
+
+   if(bn < NINDIRECT * NINDIRECT) {
+     if((addr = ip->addrs[NDIRECT + 1]) == 0)
+       ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+     bp = bread(ip->dev, addr);
+     a = (uint*)bp->data;
+     if((addr = a[bn / NINDIRECT]) == 0){
+       a[bn / NINDIRECT] = addr = balloc(ip->dev);
+       log_write(bp);
+     }
+     brelse(bp);
+
+     bp = bread(ip->dev, addr);
+     a = (uint*)bp->data;
+     if((addr = a[bn % NINDIRECT]) == 0){
+       a[bn % NINDIRECT] = addr = balloc(ip->dev);
+       log_write(bp);
+     }
+     brelse(bp);
+     return addr;
+   }
 
   panic("bmap: out of range");
 }
