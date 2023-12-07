@@ -3,29 +3,29 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 
-//tkaen from ls.c
-char 
-*fmtname(char *path) {
+// Taken from ls.c
+char *fmtname(char *path) {
     static char buf[DIRSIZ + 1];
     char *p;
 
     // Find first character after last slash.
     for (p = path + strlen(path); p >= path && *p != '/'; p--)
         ;
+
     p++;
 
     // Return blank-padded name.
     if (strlen(p) >= DIRSIZ)
         return p;
+
     memmove(buf, p, strlen(p));
     memset(buf + strlen(p), '\0', DIRSIZ - strlen(p));
     return buf;
 }
 
-// recursive function to find the file
-// takes a path, a buffer, a file descriptor, a struct stat, and a search string 
-void 
-finddir(char *path, char *buf, int fd, struct stat st, char *search) {
+// Recursively find files
+// Takes a path, a buffer, a file descriptor, a struct stat, and a search string
+void finddir(char *path, char *buf, int fd, struct stat st, char *search) {
     char *p;
     struct dirent de;
     struct stat st2;
@@ -44,6 +44,7 @@ finddir(char *path, char *buf, int fd, struct stat st, char *search) {
     while (read(fd, &de, sizeof(de)) == sizeof(de)) {
         if (de.inum == 0)
             continue;
+
         memmove(p, de.name, DIRSIZ);
         p[DIRSIZ] = 0;
 
@@ -75,62 +76,54 @@ finddir(char *path, char *buf, int fd, struct stat st, char *search) {
     }
 }
 
-void
-errorExit(char *msg, char *path)
-{
-    fprintf(2, "Find: %s\n", msg, path);
+/**
+ * This function prints the specified error message
+ * and then terminates the program with a non-zero exit status.
+ */
+void errorExit(char *msg, char *path) {
+    fprintf(2, "find: %s %s\n", msg, path);
     exit(1);
 }
 
-void
-find(char *path, char *search)
-{
+void find(char *path, char *search) {
     char buf[512];
-    int fd; // Fd of path passed in
-    struct stat st; // Details about path
+    int fd; 
+    struct stat st; 
 
     // Path must be a directory
-    if((fd = open(path, 0)) < 0){
+    if ((fd = open(path, 0)) < 0) {
         errorExit("cannot open %s\n", path);
         return;
     }
-
     // Path must have stats
-    if(fstat(fd, &st) < 0){
+    if (fstat(fd, &st) < 0) {
         errorExit("cannot stat %s\n", path);
-        //close(fd);
-        //return;
     }
-
+    // Check if the file type is a directory
     if (st.type == T_DIR) {
         finddir(path, buf, fd, st, search);
     }
     close(fd);
 }
 
-int
-main(int argc, char *argv[])
-{
-        int i;
+int main(int argc, char *argv[]) {
+    int i;
 
-        if(argc < 2){
-                printf("find: requires a file name to search for\n");
-        } else if (argc == 2) { // If no starting-point specified, '.' is assumed
-                struct stat st;
-                if (stat(argv[1], &st) < 0) {
-                        errorExit("cannot stat %s\n", argv[1]);
-                        //exit(1);
-                }
-                if (st.type != T_DIR) {
-                        errorExit("%s is not a directory\n", argv[1]);
-                        //fprintf(2, "find: %s is not a directory\n", argv[1]);
-                        //exit(1);
-                }
-                find(".", argv[1]);
-        } else {
-                for (i = 2; i < argc; i++) {
-                        find(argv[1], argv[i]);
-                }
+    if (argc < 2) {
+        errorExit("requires a file name to search for\n", "");
+    } else if (argc == 2) { // If no starting-point specified, '.' is assumed
+        struct stat st;
+        if (stat(argv[1], &st) < 0) {
+            errorExit(argv[1], "does not exist");
         }
-        exit(0);
+        if (st.type != T_DIR) {
+            errorExit(argv[1], "is not a directory");
+        }
+        find(".", argv[1]);
+    } else {
+        for (i = 2; i < argc; i++) {
+            find(argv[1], argv[i]);
+        }
+    }
+    exit(0);
 }
