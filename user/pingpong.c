@@ -14,11 +14,13 @@ main(int argc, char **argv)
         read(p[0], buf, 1); // Read from pipe
         printf("%d: received ping\n", getpid());
         write(p[1], "ping", 1); // Write to pipe
+        close(p[0]); // close read
     } else { // Parent process
         write(p[1], "pong", 1); // Write to pipe
         wait(0); // Wait for child process to finish
         read(p[0], buf, 1); // Read from pipe
         printf("%d: received pong\n", getpid());
+        close(p[1]); //close write
     }
     exit(0);
 }

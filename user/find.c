@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     int i;
 
     if (argc < 2) {
-        errorExit("requires a file name to search for\n", "");
+        errorExit("needs file name", "");
     } else if (argc == 2) { // If no starting-point specified, '.' is assumed
         struct stat st;
         if (stat(argv[1], &st) < 0) {
