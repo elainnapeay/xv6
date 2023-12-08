@@ -110,17 +110,17 @@ get_thread(void *xa)
   return NULL;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   pthread_t *tha;
   void *value;
   double t1, t0;
   double singleThreadTime, parallelTime;
-  //initlize single lock
+  // initlize single lock
   pthread_mutex_init(&lock, NULL); // initialize the lock
 
-  if (argc < 2) {
+  if (argc < 2)
+  {
     fprintf(stderr, "Usage: %s nthreads\n", argv[0]);
     exit(-1);
   }
@@ -128,89 +128,56 @@ main(int argc, char *argv[])
   tha = malloc(sizeof(pthread_t) * nthread);
   srandom(0);
   assert(NKEYS % nthread == 0);
-  for (int i = 0; i < NKEYS; i++) {
+  for (int i = 0; i < NKEYS; i++)
+  {
     keys[i] = random();
   }
-  //initlize array multilocks
-  // for(int i = 0; i < NBUCKET; i++) {
-  //   pthread_mutex_init(&locks[i], NULL); // initialize the lock p
-  // }
+  // initlize array multilocks
+  //  for(int i = 0; i < NBUCKET; i++) {
+  //    pthread_mutex_init(&locks[i], NULL); // initialize the lock p
+  //  }
 
   //
   // first the puts
-  //
-  // t0 = now();
-  // for(int i = 0; i < nthread; i++) {
-  //   assert(pthread_create(&tha[i], NULL, put_thread, (void *) (long) i) == 0);
-  // }
-  // for(int i = 0; i < nthread; i++) {
-  //   assert(pthread_join(tha[i], &value) == 0);
-  // }
-  // t1 = now();
+  t0 = now();
+  for (int i = 0; i < nthread; i++)
+  {
+    assert(pthread_create(&tha[i], NULL, put_thread, (void *)(long)i) == 0);
+  }
+  for (int i = 0; i < nthread; i++)
+  {
+    assert(pthread_join(tha[i], &value) == 0);
+  }
+  t1 = now();
+  singleThreadTime = t1 - t0;
 
-  // printf("%d puts, %.3f seconds, %.0f puts/second\n",
-  //        NKEYS, t1 - t0, NKEYS / (t1 - t0));
-
-
-
-
-t0 = now();
-    for (int i = 0; i < nthread; i++) {
-        assert(pthread_create(&tha[i], NULL, put_thread, (void *)(long)i) == 0);
-    }
-    for (int i = 0; i < nthread; i++) {
-        assert(pthread_join(tha[i], &value) == 0);
-    }
-    t1 = now();
-    singleThreadTime = t1 - t0;
-
-    printf("%d puts, %.3f seconds, %.0f puts/second\n",
-           NKEYS, singleThreadTime, NKEYS / singleThreadTime);
-
-
-
-
-
+  printf("%d puts, %.3f seconds, %.0f puts/second\n",
+         NKEYS, singleThreadTime, NKEYS / singleThreadTime);
   //
   // now the gets
-  //
-  // t0 = now();
-  // for(int i = 0; i < nthread; i++) {
-  //   assert(pthread_create(&tha[i], NULL, get_thread, (void *) (long) i) == 0);
-  // }
-  // for(int i = 0; i < nthread; i++) {
-  //   assert(pthread_join(tha[i], &value) == 0);
-  // }
-  // t1 = now();
+  t0 = now();
+  for (int i = 0; i < nthread; i++)
+  {
+    assert(pthread_create(&tha[i], NULL, get_thread, (void *)(long)i) == 0);
+  }
+  for (int i = 0; i < nthread; i++)
+  {
+    assert(pthread_join(tha[i], &value) == 0);
+  }
+  t1 = now();
+  parallelTime = t1 - t0;
 
-  // printf("%d gets, %.3f seconds, %.0f gets/second\n",
-  //        NKEYS*nthread, t1 - t0, (NKEYS*nthread) / (t1 - t0));
+  printf("%d gets, %.3f seconds, %.0f gets/second\n",
+         NKEYS * nthread, parallelTime, (NKEYS * nthread) / parallelTime);
 
+  // Calculate and output speedup
+  double speedup = singleThreadTime / parallelTime;
+  printf("Speedup: %.2f\n", speedup);
 
-
-
-   t0 = now();
-    for (int i = 0; i < nthread; i++) {
-        assert(pthread_create(&tha[i], NULL, get_thread, (void *)(long)i) == 0);
-    }
-    for (int i = 0; i < nthread; i++) {
-        assert(pthread_join(tha[i], &value) == 0);
-    }
-    t1 = now();
-    parallelTime = t1 - t0;
-
-    printf("%d gets, %.3f seconds, %.0f gets/second\n",
-           NKEYS * nthread, parallelTime, (NKEYS * nthread) / parallelTime);
-
-    // Calculate and output speedup
-    double speedup = singleThreadTime / parallelTime;
-    printf("Speedup: %.2f\n", speedup);
-
-
-  //destory 
-  // for(int i = 0; i < NBUCKET; i++) {
-  //   pthread_mutex_destroy(&locks[i]); // destroy the lock p
-  // }
-  //destory single lock
+  // destory
+  //  for(int i = 0; i < NBUCKET; i++) {
+  //    pthread_mutex_destroy(&locks[i]); // destroy the lock p
+  //  }
+  // destory single lock
   pthread_mutex_destroy(&lock); // destroy the lock p
 }
